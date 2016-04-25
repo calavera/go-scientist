@@ -87,6 +87,7 @@ experiment := scientist.NewQuickExperiment()
 experiment.Use(control)
 
 login, err := scientist.RunWithContext(ctx, experiment)
-`
+```
+
 
 This package was inspired by GitHub's ruby scientist: https://github.com/github/scientist.
