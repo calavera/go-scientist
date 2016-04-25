@@ -1,11 +1,14 @@
 # Introduction
 
-Package scientist helps you refactor your Go code with confidence.
+[![GoDoc](https://godoc.org/github.com/calavera/go-scientist?status.svg)](https://godoc.org/github.com/calavera/go-scientist)
+
+
+scientist helps you refactor your Go code with confidence.
 
 Start by creating a new experiment:
 
 ```go
-e := scientist.NewQuickExperiment()
+experiment := scientist.NewQuickExperiment()
 ```
 
 Wrap the current behavior into the control function:
@@ -17,7 +20,7 @@ control := func(ctx context.Context) (interface{}, error) {
 	return "done", nil
 }
 
-e.Use(control)
+experiment.Use(control)
 ```
 
 Then, create one or more candidate behaviors to compare results:
@@ -29,20 +32,20 @@ slightlyFasterButWrongResult := func(ctx context.Context) (interface{}, error) {
 	return "exit", nil
 }
 
-e.Try("slightly faster call", slightlyFasterWrongResult)
+experiment.Try("slightly faster call", slightlyFasterWrongResult)
 
 // I think this is what I want \m/
 superFast := func(ctx context.Context) (interface{}, error) {
 	return "done", nil
 }
 
-e.Try("super fast call", superFast)
+experiment.Try("super fast call", superFast)
 ```
 
 Finally, run the experiment:
 
 ```go
-value, err := scientist.Run(e)
+value, err := scientist.Run(experiment)
 ```
 
 This call always returns the result of calling the control function.
@@ -65,6 +68,26 @@ To enable this, you can set the global variable `scientist.ErrorOnMismatch` to `
 
 In case of mismatched observations, `scientist.Run` returns `scientist.MismatchResult` as error,
 giving you access to all the information about the observations.
+
+## Adding context information
+
+Giving extra information to your experiments is easy using a `context.Context` object.
+Use `scientist.RunWithContext` to run your experiment and each behavior will get a copy
+of your context object to gather more information.
+
+```go
+ctx := context.Background()
+ctx = context.WithValue(ctx, "user", models.User{})
+
+control := func(ctx context.Context) (interface{}, error) {
+	return ctx.Value("user").(models.User).Login, nil
+}
+
+experiment := scientist.NewQuickExperiment()
+experiment.Use(control)
+
+login, err := scientist.RunWithContext(ctx, experiment)
+`
 
 
 This package was inspired by GitHub's ruby scientist: https://github.com/github/scientist.
