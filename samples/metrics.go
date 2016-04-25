@@ -9,19 +9,19 @@ import (
 	"golang.org/x/net/context"
 )
 
-type MetricsExperiment struct {
+type metricsExperiment struct {
 	scientist.QuickExperiment
 	client *statsd.Client
 }
 
-func NewMetricsExperiment(client *statsd.Client) *MetricsExperiment {
-	return &MetricsExperiment{
+func newMetricsExperiment(client *statsd.Client) *metricsExperiment {
+	return &metricsExperiment{
 		QuickExperiment: scientist.NewQuickExperiment(),
 		client:          client,
 	}
 }
 
-func (m *MetricsExperiment) Publish(ctx context.Context, result scientist.Result) error {
+func (m *metricsExperiment) Publish(ctx context.Context, result scientist.Result) error {
 	control := fmt.Sprintf("scientist.metrics.%s.control.duration", m.Name())
 	m.client.Timing(control, int64(result.Control.Duration))
 
