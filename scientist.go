@@ -74,6 +74,7 @@ This package was inspired by GitHub's ruby scientist: https://github.com/github/
 package scientist
 
 import (
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
@@ -122,19 +123,7 @@ func RunWithContext(ctx context.Context, e Experiment) (interface{}, error) {
 		return c(ctx)
 	}
 
-	var control *Observation
-	var candidates []*Observation
-
-	for _, name := range behaviors {
-		b := e.Behavior(name)
-		o := observe(ctx, name, b)
-
-		if name == "__control__" {
-			control = o
-		} else {
-			candidates = append(candidates, o)
-		}
-	}
+	control, candidates := runExperiment(ctx, e, behaviors)
 
 	result := gatherResult(ctx, e, control, candidates)
 
@@ -147,6 +136,36 @@ func RunWithContext(ctx context.Context, e Experiment) (interface{}, error) {
 	}
 
 	return control.Value, control.Error
+}
+
+func runExperiment(ctx context.Context, e Experiment, behaviors []string) (*Observation, []*Observation) {
+	var control *Observation
+	var candidates []*Observation
+	var wg sync.WaitGroup
+
+	finished := make(chan *Observation, len(behaviors))
+
+	for _, name := range behaviors {
+		wg.Add(1)
+		go func(ctx context.Context, name string) {
+			defer wg.Done()
+
+			b := e.Behavior(name)
+			finished <- observe(ctx, name, b)
+		}(ctx, name)
+	}
+	wg.Wait()
+	close(finished)
+
+	for o := range finished {
+		if o.Name == "__control__" {
+			control = o
+		} else {
+			candidates = append(candidates, o)
+		}
+	}
+
+	return control, candidates
 }
 
 func observe(ctx context.Context, name string, b Behavior) (obs *Observation) {
