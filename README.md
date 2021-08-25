@@ -32,7 +32,7 @@ slightlyFasterButWrongResult := func(ctx context.Context) (interface{}, error) {
 	return "exit", nil
 }
 
-experiment.Try("slightly faster call", slightlyFasterWrongResult)
+experiment.Try("slightly faster call", slightlyFasterButWrongResult)
 
 // I think this is what I want \m/
 superFast := func(ctx context.Context) (interface{}, error) {
